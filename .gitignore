@@ -1,0 +1,9 @@
+*.dll
+*.pdb
+*.deps*
+*.nuget*
+*.AssemblyInfo*
+*.csproj.*
+*.assets.json
+*.g.*
+*.runtimeconfig*
