@@ -6,7 +6,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Orleans.Hosting;
-using OrleansAWSUtils.Membership;
+using OrleansAWSUtils;
 
 namespace OrleansClient
 {
@@ -48,19 +48,16 @@ namespace OrleansClient
             {
                 try
                 {
-                    var config = ClientConfiguration.LocalhostSilo();
-
-                    config.GatewayProvider = ClientConfiguration.GatewayProviderType.Custom;
-                    config.CustomGatewayProviderAssemblyName = "Orleans.Clustering.DynamoDB";
-                    config.ClusterId = "Cluster";
-
                     client = new ClientBuilder()
-                        .UseConfiguration(config)
+                        .ConfigureCluster(options => {
+                            options.ClusterId = "TestCluster";
+                        })
+                        .UseDynamoDBClustering(options => {
+                            options.Service = "";
+                            options.TableName = "OrleansSiloInstances";
+                        })
                         .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(IHelloGrain).Assembly).WithReferences())
                         .ConfigureLogging(logging => logging.AddConsole())
-                        .UseDynamoDBGatewayListProvider(options => {
-                            LegacyDynamoDBGatewayListProviderConfigurator.ParseDataConnectionString(ConnectionString, options);
-                        })
                         .Build();
 
                     await client.Connect();

@@ -9,7 +9,7 @@ using Orleans;
 using Orleans.Hosting;
 using Orleans.Runtime.Configuration;
 using Orleans.Configuration;
-using OrleansDashboard;
+using OrleansAWSUtils;
 
 namespace OrleansSiloHost
 {
@@ -42,26 +42,11 @@ namespace OrleansSiloHost
         public static string ConnectionString = "<ConnectionStrHere>";
         private static async Task<ISiloHost> StartSilo()
         {
-            var config = new ClusterConfiguration();
-
-            config.Defaults.Port = 11111;  
-            config.Defaults.ProxyGatewayEndpoint = new IPEndPoint(IPAddress.Any, 30000);
-
-            config.Globals.ReminderServiceType = GlobalConfiguration.ReminderServiceProviderType.Disabled;
-            config.Globals.LivenessType = GlobalConfiguration.LivenessProviderType.Custom;               
-            config.Globals.MembershipTableAssembly = "Orleans.Clustering.DynamoDB";
-
-            config.Globals.ClusterId = "Cluster";
-
-            config.AddMemoryStorageProvider();
-            //config.RegisterDashboard();
-
             var host = new SiloHostBuilder()
-                .UseConfiguration(config)
-                /*.UseDashboard(options => {
-                    options.HostSelf = true;
-                    options.HideTrace = true;
-                })*/
+                .Configure(options => {
+                    options.ClusterId = "TestCluster";
+                })
+                .ConfigureEndpoints(IPAddress.Any, 30000, 11111)
                 .ConfigureApplicationParts(parts => parts.AddApplicationPart(typeof(HelloGrain).Assembly).WithReferences())
                 .ConfigureLogging(logging => logging.AddConsole())
                 .ConfigureHostConfiguration(configBuilder => {
@@ -70,8 +55,9 @@ namespace OrleansSiloHost
                         new KeyValuePair<string, string>(HostDefaults.ApplicationKey, "OrleansSimpleTestApp")
                     });
                 })
-                .UseDynamoDBMembership(options => {
-                    options.ConnectionString = ConnectionString;
+                .UseDynamoDBClustering(options => {
+                    options.Service = "";
+                    options.TableName = "OrleansSiloInstances";
                 })
                 .Build();
 
